@@ -1,0 +1,62 @@
+{
+  "doc_id": "google_prohibited",
+  "url": "https://support.google.com/adspolicy/answer/6015406",
+  "platform": "google",
+  "category": "prohibited",
+  "downloaded_at": "2025-12-22T18:57:17.370245",
+  "title": "Inappropriate content - Advertising Policies Help",
+  "sections": [
+    {
+      "section": "Inappropriate content",
+      "policy_level": "H1"
+    },
+    {
+      "section": "In this article",
+      "policy_level": "H4"
+    },
+    {
+      "section": "Dangerous or derogatory content",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Sexually explicit content",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Child sexual abuse and exploitation",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Adult themes in family content",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Shocking content",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Sensitive events",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Animal cruelty",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Hacked political materials",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Need help?",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Was this helpful?",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Advertising policies",
+      "policy_level": "H2"
+    }
+  ]
+}

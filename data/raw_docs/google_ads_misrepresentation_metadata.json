@@ -1,0 +1,66 @@
+{
+  "doc_id": "google_misrepresentation",
+  "url": "https://support.google.com/adspolicy/answer/6020955",
+  "platform": "google",
+  "category": "misrepresentation",
+  "downloaded_at": "2025-12-22T18:57:11.758264",
+  "title": "Misrepresentation - Advertising Policies Help",
+  "sections": [
+    {
+      "section": "Misrepresentation",
+      "policy_level": "H1"
+    },
+    {
+      "section": "Unacceptable business practices",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Coordinated deceptive practices",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Misleading representation",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Dishonest pricing practices",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Clickbait ads",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Misleading ad design",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Manipulated media",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Unreliable claims",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Unclear relevance",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Unavailable offers",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Need help?",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Was this helpful?",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Advertising policies",
+      "policy_level": "H2"
+    }
+  ]
+}

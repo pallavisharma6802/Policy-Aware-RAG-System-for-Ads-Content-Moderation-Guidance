@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+models/*.gguf
+data/raw_docs/*.html
+data/raw_docs/*.md
+data/processed_chunks/*.json

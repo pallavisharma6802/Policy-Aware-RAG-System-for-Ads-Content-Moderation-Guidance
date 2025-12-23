@@ -1,0 +1,58 @@
+{
+  "doc_id": "google_restricted",
+  "url": "https://support.google.com/adspolicy/answer/6014299",
+  "platform": "google",
+  "category": "restricted",
+  "downloaded_at": "2025-12-22T18:57:14.718842",
+  "title": "Dangerous products or services - Advertising Policies Help",
+  "sections": [
+    {
+      "section": "Dangerous products or services",
+      "policy_level": "H1"
+    },
+    {
+      "section": "In this article",
+      "policy_level": "H4"
+    },
+    {
+      "section": "Explosives",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Guns, gun parts, and related products",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Other weapons",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Recreational drugs",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Sodium Nitrite",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Tobacco",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Consumer advisories",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Need help?",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Was this helpful?",
+      "policy_level": "H2"
+    },
+    {
+      "section": "Advertising policies",
+      "policy_level": "H2"
+    }
+  ]
+}
