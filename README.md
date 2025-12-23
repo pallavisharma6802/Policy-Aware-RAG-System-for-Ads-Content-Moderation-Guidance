@@ -330,9 +330,121 @@ Future expansion paths:
 
 The architecture is designed to scale from hundreds to millions of chunks without structural changes.
 
-### Step 4: Embeddings & Vector Ingest (TODO)
+### Step 4: Embeddings & Vector Ingest (COMPLETED)
 
-Generate embeddings and store in Weaviate.
+Generate embeddings and store in Weaviate for semantic search.
+
+**Implementation:**
+
+- `ingestion/embed.py`: Embedding pipeline with sentence-transformers
+- `docker-compose.yml`: Weaviate vector database configuration
+- Generated 384-dimensional embeddings for all 67 chunks
+- Ingested vectors into Weaviate with complete metadata
+
+**Architecture:**
+
+- Embedding model: all-MiniLM-L6-v2 (384 dimensions, 120M parameters)
+- Vector database: Weaviate 1.23.1 running in Docker
+- Data flow: PostgreSQL (source) → SentenceTransformer → Weaviate (derived index)
+
+**Technical decisions:**
+
+1. **PostgreSQL as source of truth**
+
+   - Weaviate stores vectors derived from PostgreSQL text
+   - Can rebuild Weaviate anytime from PostgreSQL
+   - Enables auditing, debugging, and version control
+
+2. **Explicit object ID mapping**
+
+   - Weaviate object ID set to match PostgreSQL chunk_id
+   - Enables reliable joins during hybrid retrieval
+   - Critical for combining vector search with SQL filters
+
+3. **Complete metadata storage**
+
+   - Stored in Weaviate: policy_source, region, content_type, policy_section_level
+   - Enables efficient filtering without over-fetching vectors
+   - Supports hierarchy-aware ranking (H2 vs H3)
+
+4. **Deterministic ordering**
+
+   - Chunks loaded with `.order_by(doc_id, chunk_index)`
+   - Guarantees stable embedding order across runs
+   - Simplifies debugging and reproducibility
+
+5. **Dimension validation**
+   - Explicit assertion: `len(embeddings[0]) == 384`
+   - Catches silent model changes immediately
+   - Production safety check
+
+**Weaviate schema (9 fields):**
+
+```python
+{
+  "chunk_id": "text",           # UUID matching PostgreSQL
+  "chunk_text": "text",          # Full text with hierarchy
+  "doc_id": "text",              # Versioned document ID
+  "policy_section": "text",      # Leaf section title
+  "policy_path": "text",         # Full hierarchical path
+  "policy_section_level": "text", # H2 or H3
+  "policy_source": "text",       # google, facebook, etc.
+  "region": "text",              # GLOBAL, US, EU, UK
+  "content_type": "text"         # AD_TEXT, IMAGE, VIDEO, etc.
+}
+```
+
+**Commands:**
+
+```bash
+# Start Weaviate
+docker-compose up -d
+
+# Load chunks to PostgreSQL (idempotent)
+python ingestion/load_to_db.py
+
+# Generate embeddings and ingest to Weaviate
+python ingestion/embed.py
+
+# Verify
+curl http://localhost:8080/v1/meta
+```
+
+**Production fixes applied:**
+
+1. **Idempotent DB loading**: `load_to_db.py` checks for existing (doc_id, chunk_index) before insert
+2. **Explicit module disable**: Added `ENABLE_MODULES: ""` to docker-compose.yml
+3. **UUID alignment**: Weaviate object ID equals PostgreSQL chunk_id via `uuid` parameter
+4. **Metadata parity**: All PostgreSQL fields available in Weaviate for filtering
+
+**Test suite (22 tests, all passing):**
+
+Database integrity tests (10):
+
+- Constraint enforcement (UNIQUE, NOT NULL, enums)
+- Idempotent ingestion validation
+- Primary key and UUID validation
+
+Embedding tests (9):
+
+- Dimension validation (384-dim)
+- Coverage completeness (PostgreSQL count == Weaviate count)
+- ID alignment (chunk_ids match between systems)
+- Rebuildability (can delete and rebuild Weaviate)
+
+Hybrid retrieval prep tests (3):
+
+- Object ID matching (Weaviate ID == chunk_id)
+- Metadata field storage (policy_source, region, content_type, policy_section_level)
+- Filter functionality (can filter by metadata in Weaviate)
+
+**Why this architecture:**
+
+- PostgreSQL remains authoritative source for all data
+- Weaviate is a derived index optimized for vector search
+- Both systems share chunk_id for reliable joins
+- Metadata in both systems enables flexible retrieval strategies
+- System can be rebuilt from PostgreSQL anytime
 
 ### Step 5: Hybrid Retrieval Logic (TODO)
 

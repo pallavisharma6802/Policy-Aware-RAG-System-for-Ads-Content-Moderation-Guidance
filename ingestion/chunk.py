@@ -82,7 +82,7 @@ def create_chunks(sections: List[Dict], metadata: Dict, max_tokens: int = 500) -
         hierarchy_text = ' > '.join(filter(None, section['hierarchy']))
         chunk_text = f"[{hierarchy_text}]\n\n{text}"
         
-        estimated_tokens = len(chunk_text.split())
+        estimated_tokens = len(chunk_text.split()) / 0.75
         
         if estimated_tokens > max_tokens:
             paragraphs = text.split('\n\n')
