@@ -377,6 +377,7 @@ Generate embeddings and store in Weaviate for semantic search.
    - Explicit assertion: `len(embeddings[0]) == 384`
    - Catches silent model changes immediately
    - Production safety check
+   - Note: 384 is fixed by all-MiniLM-L6-v2 architecture; different dimensions indicate wrong model, corrupted download, or library version mismatch
 
 **Weaviate schema (9 fields):**
 
@@ -523,7 +524,3 @@ deactivate
 - Data privacy (no external API calls)
 - Deterministic behavior for testing
 - Efficient inference on Apple Silicon
-
-## License
-
-MIT
