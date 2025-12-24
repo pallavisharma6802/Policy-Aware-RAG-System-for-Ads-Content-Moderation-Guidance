@@ -20,7 +20,7 @@ A customer-facing Retrieval-Augmented Generation (RAG) system that provides poli
 ### ML & RAG
 
 - SentenceTransformers (all-MiniLM-L6-v2): Text embeddings
-- Llama-3 8B Instruct (Q4): Local LLM for generation
+- Ollama + Qwen3-4B: Local LLM inference
 - LangChain: RAG orchestration
 
 ### API & Deployment
@@ -109,7 +109,7 @@ Create a `.env` file in the project root:
 ```env
 DATABASE_URL=postgresql://your_username@localhost:5432/ads_policy_rag
 WEAVIATE_URL=http://localhost:8080
-LLAMA_MODEL_PATH=./models/llama-3-8b-instruct.Q4_K_M.gguf
+OLLAMA_MODEL=qwen3:4b
 ```
 
 Replace `your_username` with your system username (run `whoami` to check).
@@ -631,9 +631,181 @@ python -m pytest tests/ -v
 - Hierarchy awareness surfaces specific rules before broad policies
 - Singleton pattern makes system production-ready
 
-### Step 6: Generation Layer (TODO)
+### Step 6: Grounded Generation Layer (COMPLETED)
 
-Build LLM prompts with grounding and citations.
+Generate accurate, citation-backed answers using local LLM with Ollama.
+
+**Implementation:**
+
+Core files:
+
+- `app/generation.py`: LLM orchestration with citation validation (151 lines)
+- `app/citations.py`: Citation extraction and validation (35 lines)
+- `app/schemas.py`: PolicyResponse and Citation dataclasses (48 lines)
+
+**Technology stack:**
+
+Ollama (https://ollama.ai):
+
+- Local LLM server managing model lifecycle (download, load, inference)
+- Using qwen3:4b model (4 billion parameters from Alibaba Qwen family)
+- Runs entirely offline (no API costs, data stays private)
+- Optimized for Apple Silicon (Metal), CUDA (NVIDIA), and CPU
+
+LangChain:
+
+- PromptTemplate: Structures prompt with variables (question, sources)
+- LLMChain: Combines prompt + LLM into simple pipeline
+- Handles prompt formatting and response parsing
+
+**RAG architecture:**
+
+1. Retrieval: Get top-k policy chunks from Weaviate (Step 5)
+2. Pre-generation validation: Refuse if confidence < 0.25 or no results
+3. Prompt construction: Format sources with chunk IDs for citation
+4. LLM generation: Qwen3-4b generates answer with [SOURCE:chunk_id] citations
+5. Post-generation validation: Verify citations match retrieved chunk IDs
+6. Response packaging: Return PolicyResponse with metrics
+
+**Why this approach:**
+
+Grounding via RAG:
+Instead of letting the LLM generate from its training data (outdated or hallucinated), we force it to work ONLY with retrieved policy text. This is the core RAG pattern.
+
+Citation validation:
+We parse [SOURCE:<chunk_id>] tokens from LLM output and verify they match chunk IDs we actually retrieved. Prevents inventing sources.
+
+Refusal logic:
+If LLM can't answer confidently with provided sources, it outputs "REFUSE". Better than hallucinating. We also refuse pre-generation if retrieval confidence is too low.
+
+Deterministic generation:
+temperature=0.05 makes outputs highly consistent. Lower temperature means the model always picks the most likely next token rather than sampling randomly. Critical for policy compliance where we want predictable, factual answers.
+
+Performance metrics:
+
+- latency_ms: Total time from query to response (retrieval + generation)
+- num_tokens_generated: Approximate token count using word splitting
+- Helps monitor system performance and cost estimation
+
+**Model selection - qwen3:4b:**
+
+- Small enough to run on consumer hardware (4GB RAM)
+- Fast inference (1-3 seconds per query vs 30-60s for larger models)
+- Strong instruction following (respects citation format and refusal rules)
+- Trained on multilingual data including policy/compliance text
+- Part of Qwen 3 family released in 2024, optimized for chat/instruction tasks
+
+**Functions:**
+
+```python
+should_refuse(results, min_score=0.25) -> (bool, Optional[str])
+```
+
+Pre-generation refusal check. Prevents LLM call if retrieval quality is poor.
+
+```python
+format_sources(results) -> str
+```
+
+Formats retrieved chunks into structured text for LLM prompt. Each chunk gets clear SOURCE {chunk_id}: label.
+
+```python
+get_llm(model_name=None) -> Ollama
+```
+
+Returns Ollama LLM instance with temperature=0.05 for deterministic outputs.
+
+```python
+generate_policy_response(query, llm=None, limit=5, region=None, content_type=None, policy_source=None) -> PolicyResponse
+```
+
+Main generation pipeline: retrieval, validation, LLM call, citation check, metrics.
+
+**Setup Ollama:**
+
+```bash
+# Install Ollama
+brew install ollama
+
+# Start Ollama service
+ollama serve
+
+# Pull qwen3:4b model
+ollama pull qwen3:4b
+```
+
+**Environment variables:**
+
+```env
+OLLAMA_MODEL=qwen3:4b
+```
+
+**Testing:**
+
+5 critical guardrail tests in `tests/test_generation_guardrails.py`:
+
+1. Refuses when no chunks retrieved (prevents hallucination)
+2. Refuses when confidence too low (semantic retrieval can be weak)
+3. Refuses when citations don't match retrieved chunks (prevents citation hallucination)
+4. Successful generation includes citations (grounding requirement)
+5. Response includes performance metrics (latency_ms, num_tokens_generated)
+
+```bash
+# Run Step 6 generation tests (5 tests)
+python -m pytest tests/test_generation_guardrails.py -v
+
+# Run all tests including Steps 1-5 (76 tests total)
+python -m pytest tests/ -v
+```
+
+**Example usage:**
+
+```python
+from app.generation import generate_policy_response
+
+response = generate_policy_response("Can I advertise alcohol?", limit=5)
+
+print(f"Refused: {response.refused}")
+print(f"Answer: {response.answer}")
+print(f"Citations: {len(response.citations)}")
+print(f"Latency: {response.latency_ms:.1f}ms")
+```
+
+**Output:**
+
+```
+Refused: False
+Answer: Google Ads does not allow certain kinds of alcohol-related advertising. Some types of alcohol-related ads are allowed if they do not target minors and target only countries that are explicitly allowed to show alcohol ads. [SOURCE:2eb0b384-6b6a-49c3-9265-9483712932f1]
+Citations: 1
+Latency: 224.3ms
+```
+
+**Prompt engineering:**
+
+Simplified from [INST] style to plain instruction format (Qwen doesn't need special tokens):
+
+```
+You are a policy compliance assistant for Google Ads.
+
+Answer using ONLY the sources below. Every factual claim MUST include a citation.
+
+Rules:
+1. Use ONLY the provided sources - no external knowledge
+2. Cite sources using this exact format: [SOURCE:<chunk_id>]
+3. If sources lack sufficient information, respond with exactly: REFUSE
+```
+
+**Performance tuning:**
+
+- temperature=0.05: Minimal variance for policy consistency
+- Latency tracking: Monitors retrieval + generation time
+- Token counting: Approximates response length for cost estimation
+
+**Why Ollama over alternatives:**
+
+Transformers + MPS: 30-60 seconds per query even with Apple Silicon GPU
+llama.cpp + Metal: Still slow, complex compilation
+Ollama: 1-3 seconds, handles model lifecycle, optimized backends
 
 ### Step 7: API Layer (TODO)
 
@@ -698,9 +870,10 @@ deactivate
 - SQL search alone: Cannot understand semantic meaning
 - Hybrid: Combines semantic relevance with structural constraints
 
-### Local LLM (Llama-3)
+### Local LLM (Qwen 2.5 3B Instruct)
 
 - No API costs for inference
 - Data privacy (no external API calls)
-- Deterministic behavior for testing
-- Efficient inference on Apple Silicon
+- Deterministic behavior for testing (temperature=0.1)
+- Quantized Q4 model for efficient inference
+- Faster than larger models (3B vs 7B parameters)
