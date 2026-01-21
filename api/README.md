@@ -17,56 +17,6 @@ FastAPI (port 8000)
     └─ GET /            → Static HTML → Web UI
 ```
 
-## Endpoints
-
-### POST /query
-
-Main endpoint for policy questions.
-
-**Request:**
-
-```json
-{
-  "query": "Can I advertise alcohol?",
-  "limit": 5,
-  "region": "Global",
-  "content_type": "Advertising Policy",
-  "policy_source": "Google Ads Policy"
-}
-```
-
-**Response (success):**
-
-```json
-{
-  "answer": "Alcohol advertising is allowed with certification...",
-  "refused": false,
-  "citations": [
-    {
-      "chunk_id": "google_ads_overview_chunk_005",
-      "policy_path": "Prohibited Content > Alcohol",
-      "doc_id": "google_ads_overview",
-      "doc_url": "https://support.google.com/adspolicy/answer/6012382"
-    }
-  ],
-  "refusal_reason": null,
-  "latency_ms": 2543.2,
-  "num_tokens_generated": 87
-}
-```
-
-**Response (refusal):**
-
-```json
-{
-  "answer": "I cannot provide a confident answer based on the provided sources.",
-  "refused": true,
-  "citations": [],
-  "refusal_reason": "LLM determined sources insufficient to answer query",
-  "latency_ms": 1823.1,
-  "num_tokens_generated": 23
-}
-```
 
 **Validation rules:**
 
@@ -94,38 +44,7 @@ Main endpoint for policy questions.
 }
 ```
 
-**cURL example:**
 
-```bash
-curl -X POST http://localhost:8000/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What are the gambling rules?",
-    "limit": 5
-  }'
-```
-
-**Python example:**
-
-```python
-import requests
-
-response = requests.post(
-    "http://localhost:8000/query",
-    json={
-        "query": "Can I advertise alcohol?",
-        "limit": 5
-    }
-)
-
-data = response.json()
-print(f"Answer: {data['answer']}")
-print(f"Citations: {len(data['citations'])}")
-
-for citation in data['citations']:
-    print(f"  - {citation['policy_path']}")
-    print(f"    URL: {citation['doc_url']}")
-```
 
 ### GET /health
 
@@ -153,19 +72,6 @@ Service health check endpoint.
 - **vector_db**: Weaviate availability (`client.schema.get()`)
 - **llm**: Ollama service (`/api/tags` endpoint)
 
-**Usage:**
-
-```bash
-curl http://localhost:8000/health
-
-# For monitoring/alerts
-if curl -f http://localhost:8000/health > /dev/null 2>&1; then
-  echo "Service healthy"
-else
-  echo "Service unhealthy"
-fi
-```
-
 ### GET /
 
 Interactive web UI for querying the system.
@@ -183,53 +89,6 @@ Interactive web UI for querying the system.
 
 ```
 http://localhost:8000
-```
-
-## Pydantic Models
-
-### QueryRequest
-
-```python
-class QueryRequest(BaseModel):
-    query: str = Field(..., min_length=3, max_length=500,
-                      description="Policy question to answer")
-    limit: int = Field(default=5, ge=1, le=20,
-                      description="Maximum number of sources to retrieve")
-    region: Optional[str] = Field(None, description="Filter by policy region")
-    content_type: Optional[str] = Field(None, description="Filter by content type")
-    policy_source: Optional[str] = Field(None, description="Filter by policy source")
-```
-
-### QueryResponse
-
-```python
-class QueryResponse(BaseModel):
-    answer: str = Field(description="Generated answer text")
-    refused: bool = Field(description="Whether LLM refused to answer")
-    citations: List[CitationResponse] = Field(description="Source citations")
-    refusal_reason: Optional[str] = Field(None, description="Reason for refusal if applicable")
-    latency_ms: float = Field(description="Total response time in milliseconds")
-    num_tokens_generated: int = Field(description="Number of tokens in answer")
-```
-
-### CitationResponse
-
-```python
-class CitationResponse(BaseModel):
-    chunk_id: str = Field(description="Unique chunk identifier")
-    policy_path: str = Field(description="Hierarchical policy section path")
-    doc_id: str = Field(description="Source document identifier")
-    doc_url: str = Field(description="URL to full policy document")
-```
-
-### HealthResponse
-
-```python
-class HealthResponse(BaseModel):
-    status: str = Field(description="Overall system status: healthy or degraded")
-    database: str = Field(description="PostgreSQL connection status")
-    vector_db: str = Field(description="Weaviate connection status")
-    llm: str = Field(description="Ollama service status")
 ```
 
 ## Web Interface
@@ -251,32 +110,6 @@ Located in `api/static/index.html`
 - Loading spinner during processing
 - Error messages
 
-**Citation rendering:**
-
-```javascript
-citations.forEach((citation) => {
-  const citationDiv = document.createElement("div");
-  citationDiv.className = "citation";
-  citationDiv.innerHTML = `
-    <strong>${citation.policy_path}</strong><br>
-    Document ID: ${citation.doc_id}<br>
-    ${
-      citation.doc_url.startsWith("http")
-        ? `<a href="${citation.doc_url}" target="_blank">View Full Policy Document →</a>`
-        : `URL: ${citation.doc_url}`
-    }
-  `;
-  citationsContainer.appendChild(citationDiv);
-});
-```
-
-**Styling:**
-
-- Blue theme (#1a73e8)
-- Responsive grid layout
-- Clean professional design
-- Loading states
-- Mobile-friendly
 
 ## API Documentation
 
