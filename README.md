@@ -21,42 +21,6 @@ This system answers policy questions by:
 - **Fully Dockerized**: One command deploys entire stack
 - **90 Tests**: Comprehensive test coverage (100% passing)
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         User Query                           │
-└───────────────────────────┬─────────────────────────────────┘
-                            │
-                ┌───────────▼──────────┐
-                │  FastAPI REST API    │
-                │  (api/)              │
-                └───────────┬──────────┘
-                            │
-         ┌──────────────────┼──────────────────┐
-         │                  │                  │
-    ┌────▼────┐      ┌─────▼──────┐    ┌─────▼──────┐
-    │Retrieval│      │ Generation │    │  Citations │
-    │ (app/)  │      │   (app/)   │    │   (app/)   │
-    └────┬────┘      └─────┬──────┘    └─────┬──────┘
-         │                  │                  │
-    ┌────▼────┐      ┌─────▼──────┐          │
-    │Weaviate │      │   Ollama   │          │
-    │Vectors  │      │    LLM     │          │
-    └────┬────┘      └────────────┘          │
-         │                                    │
-         └──────────┬─────────────────────────┘
-                    │
-             ┌──────▼──────┐
-             │ PostgreSQL  │
-             │   (db/)     │
-             └──────▲──────┘
-                    │
-            ┌───────┴───────┐
-            │   Ingestion   │
-            │  (ingestion/) │
-            └───────────────┘
-```
 
 ## Quick Start
 
@@ -206,7 +170,6 @@ open htmlcov/index.html
 - **Vector Dimensions**: 384 (all-MiniLM-L6-v2)
 - **Query Latency**: 2-5 seconds
 - **Model Size**: Qwen3 4B (~2.5GB)
-- **Test Coverage**: ~80% code coverage
 
 ## Example Queries
 
@@ -266,87 +229,6 @@ open htmlcov/index.html
 ├── requirements.txt    # Python dependencies
 └── README.md          # This file
 ```
-
-## Development Steps (Completed)
-
-All 8 steps are complete with full documentation:
-
-### Step 1: Data Ingestion Pipeline
-
-**Status:** COMPLETED  
-**Documentation:** [ingestion/README.md](ingestion/README.md)
-
-- Web scraping for policy documents
-- Automated section-specific URL extraction
-- HTML parsing and metadata extraction
-
-### Step 2: Database Schema
-
-**Status:** COMPLETED  
-**Documentation:** [db/README.md](db/README.md)
-
-- PostgreSQL tables: `policy_sources`, `policy_chunks`
-- SQLAlchemy ORM models
-- Database initialization
-
-### Step 3: Document Chunking
-
-**Status:** COMPLETED  
-**Documentation:** [ingestion/README.md](ingestion/README.md)
-
-- Section-based chunking (h1-h4 hierarchy)
-- Dynamic URL assignment per section
-- Policy path construction
-
-### Step 4: Embedding & Vector Storage
-
-**Status:** COMPLETED  
-**Documentation:** [ingestion/README.md](ingestion/README.md)
-
-- sentence-transformers embedding model
-- Weaviate vector indexing
-- 384-dimensional vectors
-
-### Step 5: Hybrid Retrieval
-
-**Status:** COMPLETED  
-**Documentation:** [app/README.md](app/README.md)
-
-- Semantic search via Weaviate
-- Metadata filtering via PostgreSQL
-- Score thresholding
-
-### Step 6: LLM Generation & Citations
-
-**Status:** COMPLETED  
-**Documentation:** [app/README.md](app/README.md)
-
-- Ollama + Qwen 2.5 integration
-- Citation extraction and validation
-- Refusal detection
-
-### Step 7: API Layer
-
-**Status:** COMPLETED  
-**Documentation:** [api/README.md](api/README.md)
-
-- FastAPI REST endpoints
-- Interactive web UI
-- Input validation
-- 14 API tests (all passing)
-
-### Step 8: Dockerization
-
-**Status:** COMPLETED  
-**Documentation:** See below + [DOCKER.md](DOCKER.md)
-
-- Multi-service Docker Compose
-- Automated startup script
-- Production-ready deployment
-
-## Step 8: Dockerization (COMPLETED)
-
-Containerize the entire application stack with Docker Compose for production deployment.
 
 ### Quick Start
 
@@ -421,43 +303,3 @@ OLLAMA_MODEL=qwen3:4b
 # Application
 LOG_LEVEL=INFO
 ```
-
-### Common Commands
-
-```bash
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f [service]
-
-# Check status
-docker-compose ps
-
-# Stop services
-docker-compose stop
-
-# Stop and remove (keeps data)
-docker-compose down
-
-# Stop and remove all (deletes data)
-docker-compose down -v
-
-# Rebuild after code changes
-docker-compose up -d --build fastapi
-```
-
-### Production Checklist
-
-- [ ] Change default passwords
-- [ ] Restrict CORS origins
-- [ ] Enable HTTPS/TLS
-- [ ] Add rate limiting
-- [ ] Configure resource limits
-- [ ] Set up monitoring
-- [ ] Enable automatic backups
-- [ ] Use secrets management
-
-For detailed Docker documentation, see [DOCKER.md](DOCKER.md).
-
-**Built with Python, FastAPI, PostgreSQL, Weaviate, and Ollama**
